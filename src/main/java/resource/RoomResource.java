@@ -1,5 +1,7 @@
 package resource;
 
+import exception.ResourceNotFoundException;
+import exception.RoomHasSensorsException;
 import model.Room;
 import service.DataStore;
 
@@ -26,7 +28,13 @@ public class RoomResource {
     @GET
     @Path("/{id}")
     public Room getOne(@PathParam("id") String id) {
-        return DataStore.rooms.get(id);
+        Room room = DataStore.rooms.get(id);
+
+        if (room == null) {
+            throw new ResourceNotFoundException("Room with id '" + id + "' not found");
+        }
+
+        return room;
     }
 
     @DELETE
@@ -34,11 +42,15 @@ public class RoomResource {
     public Response delete(@PathParam("id") String id) {
         Room room = DataStore.rooms.get(id);
 
+        if (room == null) {
+            throw new ResourceNotFoundException("Room with id '" + id + "' not found");
+        }
+
         if (!room.getSensorIds().isEmpty()) {
-            throw new RuntimeException("Room has sensors"); // temp (we fix later)
+            throw new RoomHasSensorsException("Cannot delete room '" + id + "': it has " + room.getSensorIds().size() + " sensor(s) assigned");
         }
 
         DataStore.rooms.remove(id);
-        return Response.ok().build();
+        return Response.noContent().build();
     }
 }

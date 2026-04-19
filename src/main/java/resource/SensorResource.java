@@ -1,5 +1,6 @@
 package resource;
 
+import exception.InvalidRoomException;
 import model.*;
 import service.DataStore;
 
@@ -30,7 +31,7 @@ public class SensorResource {
         Room room = DataStore.rooms.get(sensor.getRoomId());
 
         if (room == null) {
-            throw new RuntimeException("Room not found"); // fix later
+            throw new InvalidRoomException("Room with id '" + sensor.getRoomId() + "' does not exist");
         }
 
         DataStore.sensors.put(sensor.getId(), sensor);

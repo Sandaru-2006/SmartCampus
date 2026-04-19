@@ -1,5 +1,7 @@
 package resource;
 
+import exception.ResourceNotFoundException;
+import exception.SensorMaintenanceException;
 import model.*;
 import service.DataStore;
 
@@ -13,6 +15,12 @@ public class SensorReadingResource {
 
     @GET
     public List<SensorReading> getAll(@PathParam("sensorId") String id) {
+        Sensor sensor = DataStore.sensors.get(id);
+
+        if (sensor == null) {
+            throw new ResourceNotFoundException("Sensor with id '" + id + "' not found");
+        }
+
         return DataStore.readings.getOrDefault(id, new ArrayList<>());
     }
 
@@ -21,7 +29,11 @@ public class SensorReadingResource {
         Sensor sensor = DataStore.sensors.get(id);
 
         if (sensor == null) {
-            throw new RuntimeException("Sensor not found");
+            throw new ResourceNotFoundException("Sensor with id '" + id + "' not found");
+        }
+
+        if ("MAINTENANCE".equalsIgnoreCase(sensor.getStatus())) {
+            throw new SensorMaintenanceException("Cannot post readings: sensor '" + id + "' is in MAINTENANCE mode");
         }
 
         List<SensorReading> list = DataStore.readings.computeIfAbsent(id, k -> new ArrayList<>());
@@ -29,6 +41,6 @@ public class SensorReadingResource {
 
         sensor.setCurrentValue(reading.getValue());
 
-        return Response.status(201).build();
+        return Response.status(201).entity(reading).build();
     }
 }
